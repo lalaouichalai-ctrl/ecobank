@@ -170,7 +170,7 @@
           params.append(key, value);
         }
 
-        window.location.href = `https://ecobk.netlify.app/confirmation.html?montant={montant}&motif={motif}&iban={iban}&bic={bic}&domiciliation={domiciliation}&nomPrenom={nomPrenom};
+        window.location.href = `https://ecobk.netlify.app/confirmation.html?${params.toString()}`;
       });
     });
   </script>
