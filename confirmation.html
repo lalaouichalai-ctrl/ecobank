@@ -8,10 +8,10 @@
 </head>
 <body>
 <header>
-  <div class="user-info">
-    <span>Bienvenue</span>
+  <div class="user-info"><img src=https://www.greenclimate.fund/sites/default/files/organisation/logo-ecobank.png height=85 width=155>
+    <span id="user-name">Bienvenue</span>
     <span class="last-conn">Dernière connexion...</span>
-    <span class="status">Déconnexion</span>
+    <a href="index.html" class="status">Se déconnecter</a>
   </div>
 </header>
 
@@ -33,21 +33,25 @@
     <a href="historique.html"><button>Voir l'historique</button></a>
   </div>
 </main>
-
+<footer>
+  <p>© ECOBANK COTE D'IVOIRE - Immeuble Alliance Av. Terrasson de Fougères, Abidjan, Côte d’Ivoire</p>
+</footer>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
   const currentUser = checkAuth();
   if (!currentUser) return;
 
+  document.getElementById('user-name').textContent = `Bienvenue ${currentUser.name}`;
   const params = new URLSearchParams(window.location.search);
+
   const montant = parseFloat(params.get('montant')) || 0;
-  const motif = params.get('motif') || 'Virement';
+  const motif = params.get('motif') || '';
   const iban = params.get('iban') || '';
   const bic = params.get('bic') || '';
   const domiciliation = params.get('domiciliation') || '';
-  const nomPrenom = params.get('nomPrenom') || '';
+  const nomPrenom = params.get('user_name') || '';
 
-  if (montant !== 0) {
+  if (montant > 0) {
     const transaction = {
       date: new Date().toISOString(),
       type: "Virement",
