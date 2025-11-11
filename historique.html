@@ -4,7 +4,81 @@
   <meta charset="UTF-8">
   <title>Historique des opérations</title>
   <link rel="stylesheet" href="styles.css">
-  <script src="shared.js"></script>
+  <script type="module" src="shared.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f7fa;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background-color: #003366;
+      color: white;
+      padding: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .user-info {
+      font-size: 0.9em;
+    }
+    nav {
+      background-color: #e0e6ed;
+      padding: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    nav ul {
+      list-style: none;
+      display: flex;
+      gap: 20px;
+      margin: 0;
+      padding: 0;
+    }
+    nav a {
+      text-decoration: none;
+      color: #003366;
+      font-weight: bold;
+    }
+    main {
+      display: flex;
+      padding: 20px;
+    }
+    .left-panel {
+      flex: 3;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .right-panel {
+      flex: 1;
+      margin-left: 20px;
+    }
+    .right-panel button {
+      display: block;
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 10px;
+      background-color: #003366;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    table {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+    }
+    th, td {
+      text-align: left;
+      padding: 8px;
+      border-bottom: 1px solid #ddd;
+    }
+  </style>
 </head>
 <body>
 <header>
@@ -34,21 +108,19 @@
   <input type="search" placeholder="Rechercher" class="search-bar">
 </nav>
 
-
-
   <main>
     <div class="left-panel">
-       <h2>Historique de vos opérations</h2>
-  <table>
-    <thead>
-      <tr><th>Date</th><th>Opération</th><th>Montant</th></tr>
-    </thead>
-    <tbody id="historique-list"></tbody>
-  </table>
+      <h2>Historique de vos opérations</h2>
+      <table>
+        <thead>
+          <tr><th>Date</th><th>Opération</th><th>Montant</th></tr>
+        </thead>
+        <tbody id="historique-list"></tbody>
+      </table>
     </div>
 
     <div class="right-panel">
- <button onclick="location.href='dashboard.html'">SYNTHÈSE DES COMPTES</button>
+      <button onclick="location.href='dashboard.html'">SYNTHÈSE DES COMPTES</button>
       <button onclick="location.href='historique.html'">HISTORIQUE DES OPÉRATIONS</button>
       <button onclick="location.href='rib.html'">IMPRIMER UN RIB</button>
       <button onclick="location.href='virement.html'">FAIRE UN VIREMENT</button>
@@ -56,31 +128,41 @@
     </div>
   </main>
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  const currentUser = checkAuth();
-  if (!currentUser) return;
+  <script type="module">
+    import { checkAuth, getUsers, formatCurrency } from './shared.js';
 
-  const freshUser = getUsers().find(u => u.clientCode === currentUser.clientCode);
-  const historiqueList = document.getElementById('historique-list');
-  historiqueList.innerHTML = '';
+    document.addEventListener('DOMContentLoaded', () => {
+      const currentUser = checkAuth();
+      if (!currentUser) return;
 
-  if (Array.isArray(freshUser.history) && freshUser.history.length > 0) {
-    freshUser.history.forEach(op => {
-      const tr = document.createElement('tr');
-      const sign = op.amount < 0 ? '-' : '+';
-      const color = op.amount < 0 ? 'red' : 'green';
-      tr.innerHTML = `
-        <td>${new Date(op.date).toLocaleDateString('fr-FR')}</td>
-        <td>${op.type} - ${op.description}</td>
-        <td style="color:${color}; font-weight:bold;">${sign}${formatCurrency(Math.abs(op.amount))}</td>
-      `;
-      historiqueList.appendChild(tr);
+      // Affichage infos utilisateur
+      document.getElementById('user-name').textContent = `Bienvenue ${currentUser.name}`;
+      document.getElementById('last-conn').textContent = `Dernière connexion le ${currentUser.lastConnection}`;
+      document.getElementById('client-solde').textContent = formatCurrency(currentUser.solde);
+      document.getElementById('advisor-name').textContent = currentUser.advisor || "Non attribué";
+
+      // Historique
+      const freshUser = getUsers().find(u => u.clientCode === currentUser.clientCode);
+      const historiqueList = document.getElementById('historique-list');
+      historiqueList.innerHTML = '';
+
+      if (Array.isArray(freshUser.history) && freshUser.history.length > 0) {
+        freshUser.history.forEach(op => {
+          const tr = document.createElement('tr');
+          const sign = op.amount < 0 ? '-' : '+';
+          const color = op.amount < 0 ? 'red' : 'green';
+          tr.innerHTML = `
+            <td>${new Date(op.date).toLocaleDateString('fr-FR')}</td>
+            <td>${op.type} - ${op.description}</td>
+            <td style="color:${color}; font-weight:bold;">${sign}${formatCurrency(Math.abs(op.amount))}</td>
+          `;
+          historiqueList.appendChild(tr);
+        });
+      } else {
+        historiqueList.innerHTML = "<tr><td colspan='3'>Aucune opération enregistrée</td></tr>";
+      }
     });
-  } else {
-    historiqueList.innerHTML = "<tr><td colspan='3'>Aucune opération enregistrée</td></tr>";
-  }
-});
-</script>
+  </script>
+  
 </body>
 </html>

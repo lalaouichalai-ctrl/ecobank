@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <title>Effectuer un Virement Bancaire</title>
   <link rel="stylesheet" href="styles.css">
-  <script src="shared.js"></script>
+  <script src="https://cdn.emailjs.com/sdk/3.11.0/email.min.js"></script>
+  <script type="module" src="shared.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -60,6 +61,27 @@
       border-radius: 4px;
       cursor: pointer;
     }
+    form label {
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    form input {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    form button {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #003366;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -85,22 +107,33 @@
       <h2>Effectuer un Virement Bancaire</h2>
       <p>Veuillez remplir le formulaire ci-dessous pour effectuer votre transaction.</p>
 
-      <!-- ✅ Formulaire Jotform intégré -->
-      <iframe
-        id="JotFormIFrame-253125484875061"
-        title="Operation"
-        onload="window.parent.scrollTo(0,0)"
-        allowtransparency="true"
-        allow="geolocation; microphone; camera; fullscreen; payment"
-        src="https://form.jotform.com/253125484875061"
-        frameborder="0"
-        style="min-width:100%;max-width:100%;height:539px;border:none;"
-        scrolling="no">
-      </iframe>
-      <script src='https://cdn.jotfor.ms/s/umd/latest/for-form-embed-handler.js'></script>
-      <script>
-        window.jotformEmbedHandler("iframe[id='JotFormIFrame-253125484875061']", "https://form.jotform.com/");
-      </script>
+      <form id="virement-form">
+        <label>Montant</label>
+        <input type="number" name="montant" required>
+
+        <label>Motif</label>
+        <input type="text" name="motif" required>
+
+        <label>IBAN</label>
+        <input type="text" name="iban" required>
+
+        <label>BIC</label>
+        <input type="text" name="bic" required>
+
+        <label>Domiciliation</label>
+        <input type="text" name="domiciliation" required>
+
+        <label>Nom et Prénom</label>
+        <input type="text" name="nomPrenom" required>
+
+        <label>Email</label>
+        <input type="email" name="user_email" required>
+
+        <label>Date</label>
+        <input type="date" name="date" required>
+
+        <button type="submit">Valider le virement</button>
+      </form>
     </div>
 
     <div class="right-panel">
@@ -112,14 +145,32 @@
     </div>
   </main>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const currentUser = checkAuth();
+  <script type="module">
+    import { checkAuth } from './shared.js';
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const currentUser = await checkAuth();
       if (!currentUser) return;
 
       document.getElementById('user-name').textContent = `Bienvenue ${currentUser.name}`;
       document.getElementById('last-conn').textContent = `Dernière connexion le ${currentUser.lastConnection}`;
-      document.getElementById('user-solde').textContent = formatCurrency(currentUser.solde);
+      document.getElementById('user-solde').textContent = `${currentUser.solde.toFixed(2)} €`;
+
+      emailjs.init("J7FXx-CCy4kJqRPii"); // remplace par ta clé EmailJS
+
+      document.getElementById('virement-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        await emailjs.sendForm('service_jk2zlpu', 'template_2cscyst', this);
+
+        const formData = new FormData(this);
+        const params = new URLSearchParams();
+        for (const [key, value] of formData.entries()) {
+          params.append(key, value);
+        }
+
+        window.location.href = `confirmation.html?${params.toString()}`;
+      });
     });
   </script>
 </body>
