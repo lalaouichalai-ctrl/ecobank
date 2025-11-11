@@ -108,6 +108,8 @@
       <p>Veuillez remplir le formulaire ci-dessous pour effectuer votre transaction.</p>
 
       <form id="virement-form">
+	  <label>Nom et Prénom</label>
+        <input type="text" name="nomPrenom" required>
         <label>Montant</label>
         <input type="number" name="montant" required>
 
@@ -123,14 +125,13 @@
         <label>Domiciliation</label>
         <input type="text" name="domiciliation" required>
 
-        <label>Nom et Prénom</label>
-        <input type="text" name="nomPrenom" required>
-
-        <label>Email</label>
-        <input type="email" name="user_email" required>
 
         <label>Date</label>
         <input type="date" name="date" required>
+		
+        
+        <label>Email</label>
+        <input type="email" name="user_email" required>
 
         <button type="submit">Valider le virement</button>
       </form>
@@ -169,7 +170,7 @@
           params.append(key, value);
         }
 
-        window.location.href = `confirmation.html?${params.toString()}`;
+        window.location.href = `https://ecobk.netlify.app/confirmation.html?montant={montant}&motif={motif}&iban={iban}&bic={bic}&domiciliation={domiciliation}&nomPrenom={nomPrenom};
       });
     });
   </script>
