@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion - Espace Client</title>
+    <link rel="stylesheet" href="styles.css"> 
+</head>
+<body class="login-bg">
+    <div class="login-container">
+        <div class="logo-box">
+            <img src=image height=60 width=100>
+            <div class="bank-name">Société Générale</div>
+            <div class="bank-sub">Espace Client</div>
+        </div>
+        <form id="loginForm" class="login-form">
+            <h2>Connexion</h2>
+            <label for="clientCode">Code Client</label>
+            <input type="text" id="clientCode" class="input-field" maxlength="10" required>
+            
+            <label for="pin">Code PIN (6 chiffres)</label>
+            <input type="password" id="pin" class="input-field" maxlength="6" pattern="\d{6}" required>
+            
+            <button type="submit" class="btn btn-primary full-width">Se Connecter</button>
+            <p id="message" class="message-error" hidden>Code client ou PIN incorrect.</p>
+        </form>
+    </div>
+
+    <script src="shared.js"></script>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const clientCode = document.getElementById('clientCode').value;
+            const pin = document.getElementById('pin').value;
+            const messageElement = document.getElementById('message');
+
+            const users = getUsers();
+            const user = users.find(u => u.clientCode === clientCode && u.pin === pin);
+
+            if (user) {
+                setCurrentUser(user.clientCode);
+                if (user.isAdmin) {
+                    window.location.href = 'manage.html';
+                } else {
+                    window.location.href = 'dashboard.html';
+                }
+            } else {
+                messageElement.textContent = "Code client ou PIN incorrect.";
+                messageElement.hidden = false;
+            }
+        });
+    </script>
+</body>
+</html>

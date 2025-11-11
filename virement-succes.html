@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Virement Confirmé</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="shared.js"></script>
+    <style>
+        /* Style pour la carte de succès */
+        .success-card {
+            max-width: 600px; 
+            margin: 50px auto; 
+            background: #e6ffe6; 
+            border-left: 5px solid #4CAF50;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .success-card h2 {
+            color: #4CAF50;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .success-card h2::before {
+            content: '✅';
+            font-size: 1.2em;
+            margin-right: 10px;
+        }
+        .error-sync {
+            background: #ffe6e6;
+            border-left-color: #d9534f;
+        }
+        .error-sync h2 {
+            color: #d9534f;
+        }
+        .error-sync h2::before {
+            content: '❌';
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="top-bar">
+            <div class="user-info">
+                <span>Bienvenue Monsieur / Madame</span>
+                <span class="last-conn">Dernière connexion...</span>
+                <span class="status">Déconnexion</span>
+            </div>
+            <div class="account-info">
+                <span class="balance" id="client-solde">0,00 €</span>
+                <span class="gains">Gains en cours</span>
+                <span class="mail">Votre messagerie</span>
+            </div>
+            <div class="advisor">
+                <p>Votre conseiller<br><strong id="advisor-name">Chargement...</strong></p>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <div id="confirmation-card" class="success-card">
+            <h2>Virement Enregistré et Confirmé !</h2>
+            <p>Votre ordre de virement a été transmis. Une **attestation de virement** (factice dans ce prototype) a été envoyée par courriel à votre adresse enregistrée.</p>
+            
+            <p style="font-size: 1.3em; font-weight: bold; margin: 25px 0;">
+                Montant traité : <span id="montant-traite" style="color: #d9534f;">Chargement...</span>
+            </p>
+            
+            <p id="sync-message" style="color: #008000; font-weight: bold;">Le solde de votre compte a été ajusté immédiatement.</p>
+            
+            <a href="dashboard.html" class="btn btn-primary" style="margin-top: 30px;">Retour à l'accueil</a>
+            <a href="historique.html" class="btn" style="margin-top: 15px; display: block; background: #003366; color: white;">Voir l'historique</a>
+        </div>
+    </main>
+
+    <footer>
+        <p>© BNP Paribas - Tous droits réservés</p>
+    </footer>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const currentUser = checkAuth(); 
+            if (!currentUser) return; 
+
+            // Mise à jour de l'en-tête (nécessaire car la page est chargée seule)
+            document.getElementById('client-solde').textContent = formatCurrency(currentUser.solde);
+            document.getElementById('advisor-name').textContent = currentUser.advisor;
+
+            const card = document.getElementById('confirmation-card');
+            const montantDisplay = document.getElementById('montant-traite');
+            const syncMessage = document.getElementById('sync-message');
+
+            // Récupérer le montant de l'URL (envoyé par virement-confirmation.html)
+            const urlParams = new URLSearchParams(window.location.search);
+            let montantUrl = urlParams.get('montant');
+            
+            if (!montantUrl || isNaN(parseFloat(montantUrl))) {
+                card.classList.add('error-sync');
+                card.querySelector('h2').textContent = "❌ Synchronisation Échouée";
+                montantDisplay.textContent = "Montant inconnu ou invalide.";
+                syncMessage.textContent = "Erreur: Le montant du virement n'a pas été transmis correctement.";
+                syncMessage.style.color = '#d9534f';
+                return;
+            }
+
+            // Affichage du montant confirmé
+            montantDisplay.textContent = formatCurrency(parseFloat(montantUrl));
+        });
+    </script>
+</body>
+</html>

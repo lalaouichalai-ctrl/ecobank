@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmation de Virement</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="shared.js"></script>
+    <style>
+        .confirmation-box {
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            max-width: 700px;
+            margin: 40px auto;
+            text-align: center;
+        }
+        .summary-table {
+            width: 100%;
+            margin-bottom: 30px;
+            text-align: left;
+            border-collapse: collapse;
+        }
+        .summary-table th, .summary-table td {
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .summary-table th {
+            width: 45%;
+            font-weight: normal;
+            color: #666;
+        }
+        .summary-table td {
+            font-weight: bold;
+            color: #333;
+        }
+        .action-buttons button {
+            padding: 12px 25px;
+            font-size: 1em;
+            margin: 0 15px;
+            cursor: pointer;
+        }
+        .btn-confirm {
+            background-color: #008000;
+            color: white;
+            border: none;
+        }
+        .btn-cancel {
+            background-color: #f1f1f1;
+            color: #333;
+            border: 1px solid #ccc;
+        }
+        .message-error-conf {
+            color: #d9534f;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="top-bar">
+            <div class="user-info">
+                <span>Bienvenue Monsieur / Madame</span>
+                <span class="last-conn">Dernière connexion...</span>
+                <span class="status">Déconnexion</span>
+            </div>
+            <div class="account-info">
+                <span class="balance" id="client-solde">0,00 €</span>
+                <span class="gains">Gains en cours</span>
+                <span class="mail">Votre messagerie</span>
+            </div>
+            <div class="advisor">
+                <p>Votre conseiller<br><strong id="advisor-name">Chargement...</strong></p>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="confirmation-box">
+            <h2>Vérification et Confirmation de Virement</h2>
+            <p id="error-message" class="message-error-conf" style="display: none; margin-bottom: 20px;">
+                ❌ Erreur: Aucune transaction en attente.
+            </p>
+            
+            <p>Veuillez vérifier les détails ci-dessous avant de valider votre virement.</p>
+
+            <table class="summary-table">
+                <tbody>
+                    <tr><th>Compte Débiteur (RIB)</th><td id="conf-source-rib">...</td></tr>
+                    <tr><th>Nom du Bénéficiaire</th><td id="conf-benef-nom">...</td></tr>
+                    <tr><th>Banque du Bénéficiaire</th><td id="conf-benef-banque">...</td></tr>
+                    <tr><th>IBAN du Bénéficiaire</th><td id="conf-benef-iban">...</td></tr>
+                    <tr><th>BIC (SWIFT)</th><td id="conf-benef-bic">...</td></tr>
+                    <tr style="border-top: 1px solid #000; font-size: 1.1em;">
+                        <th>Montant à Transférer</th>
+                        <td id="conf-montant" style="color: #d9534f;">...</td>
+                    </tr>
+                    <tr><th>Motif / Référence</th><td id="conf-motif">...</td></tr>
+                </tbody>
+            </table>
+
+            <div class="action-buttons">
+                <button id="cancel-transfer" class="btn btn-cancel">Modifier / Annuler</button>
+                <button id="confirm-transfer" class="btn btn-primary btn-confirm">Confirmer et Valider Définitivement</button>
+            </div>
+            
+        </div>
+    </main>
+
+    <footer>
+        <p>© BNP Paribas - Tous droits réservés</p>
+    </footer>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const currentUser = checkAuth(); 
+            if (!currentUser) return; 
+
+            // Mise à jour de l'en-tête
+            document.getElementById('client-solde').textContent = formatCurrency(currentUser.solde);
+            document.getElementById('advisor-name').textContent = currentUser.advisor;
+
+            const pendingData = sessionStorage.getItem('pendingTransaction');
+            const errorMessage = document.getElementById('error-message');
+            const confirmButton = document.getElementById('confirm-transfer');
+            const cancelButton = document.getElementById('cancel-transfer');
+
+            if (!pendingData) {
+                errorMessage.style.display = 'block';
+                confirmButton.disabled = true;
+                return;
+            }
+
+            const data = JSON.parse(pendingData);
+
+            // 1. Afficher les données
+            document.getElementById('conf-source-rib').textContent = data.ribSource;
+            document.getElementById('conf-benef-nom').textContent = data.nomBeneficiaire;
+            document.getElementById('conf-benef-banque').textContent = data.banqueBeneficiaire;
+            document.getElementById('conf-benef-iban').textContent = data.ibanBeneficiaire;
+            document.getElementById('conf-benef-bic').textContent = data.bicBeneficiaire;
+            document.getElementById('conf-montant').textContent = formatCurrency(data.montant);
+            document.getElementById('conf-motif').textContent = data.motif;
+
+            // 2. Gestion des boutons
+
+            // Annuler: Retour à la page de virement et nettoyage
+            cancelButton.addEventListener('click', () => {
+                sessionStorage.removeItem('pendingTransaction');
+                window.location.href = 'virement.html';
+            });
+
+            // Confirmer: Exécution de la transaction
+            confirmButton.addEventListener('click', () => {
+                
+                // Préparer la transaction pour shared.js
+                const transaction = {
+                    date: new Date().toISOString(),
+                    type: "Virement SEPA/SWIFT",
+                    description: `Virement vers ${data.nomBeneficiaire} (${data.banqueBeneficiaire}, IBAN: ${data.ibanBeneficiaire}). Motif: ${data.motif}`,
+                    amount: -data.montant // Montant négatif pour le débit
+                };
+
+                // Exécuter le virement via la fonction centralisée
+                const success = addPastHistory(currentUser.clientCode, transaction);
+
+                if (success) {
+                    // Nettoyage et redirection vers la page de succès finale
+                    sessionStorage.removeItem('pendingTransaction');
+                    // Redirection vers la page de succès (qui utilise le format de votre exemple)
+                    window.location.href = `virement-succes.html?montant=${data.montant}`;
+                } else {
+                    alert("Erreur critique: Impossible d'enregistrer la transaction ou de débiter le compte. Veuillez contacter votre conseiller.");
+                    confirmButton.disabled = true;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

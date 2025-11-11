@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<script type="module" src="firebase-setup.js"></script> 
+    <script type="module" src="shared.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Effectuer un Virement Détaillé</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="shared.js"></script> 
+    <style>
+        /* Ajustement du style pour le formulaire détaillé */
+        .form-grid-detailed {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px 30px; /* Plus d'espace entre les colonnes */
+            align-items: center;
+        }
+        .form-grid-detailed label {
+            text-align: right;
+            font-weight: bold;
+        }
+        .form-grid-detailed .input-field {
+            width: 100%;
+        }
+        .full-width {
+            grid-column: 1 / -1; /* Permet à un élément de prendre les deux colonnes */
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="top-bar">
+            <div class="user-info">
+                <span>Bienvenue Monsieur / Madame</span>
+                <span class="last-conn">Dernière connexion...</span>
+                <span class="status">Déconnexion</span>
+            </div>
+            <div class="account-info">
+                <span class="balance" id="client-solde">0,00 €</span>
+                <span class="gains">Gains en cours</span>
+                <span class="mail">Votre messagerie</span>
+            </div>
+            <div class="advisor">
+                <p>Votre conseiller<br><strong id="advisor-name">Chargement...</strong></p>
+            </div>
+        </div>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="dashboard.html">VOS COMPTES ET PRODUITS</a></li>
+            <li><a href="virement.html">OPERATIONS COURANTES</a></li>
+            <li><a href="profil.html">S’INFORMER OU SOUSCRIRE</a></li>
+        </ul>
+        <input type="search" placeholder="Rechercher" class="search-bar">
+    </nav>
+
+    <main>
+        <h2>Veuillez confirmer votre virement pour une prise en compte de votre opération</h2>
+
+        <div class="account-block">
+            <h4 style="margin-bottom: 20px;">Informations de la Transaction</h4>
+            
+            <div id="virement-alert-blocked" class="message-error" style="display:none; margin-bottom: 15px;">
+                <strong>Transaction impossible !</strong> Votre compte est bloqué. Contactez votre conseiller.
+            </div>
+
+            <form id="virement-form" class="form-grid-detailed">
+                
+                <label for="compte-source">Compte à débiter (RIB)</label>
+                <input type="text" id="compte-source" class="input-field" disabled>
+                
+                <div class="full-width">
+                    <hr style="border-top: 1px solid #ddd; margin: 10px 0;">
+                    <h5 style="margin: 10px 0;">Informations du Bénéficiaire</h5>
+                </div>
+                
+                <label for="beneficiaire-nom">Nom et Prénom</label>
+                <input type="text" id="beneficiaire-nom" class="input-field" placeholder="Nom complet du destinataire" required>
+
+                <label for="beneficiaire-banque">Banque (Nom de l'établissement)</label>
+                <input type="text" id="beneficiaire-banque" class="input-field" placeholder="Ex: Crédit Agricole, Bank of America" required>
+
+                <label for="beneficiaire-iban">IBAN</label>
+                <input type="text" id="beneficiaire-iban" class="input-field" placeholder="Ex: FR76 XXXXXXX..." required>
+
+                <label for="beneficiaire-bic">Code BIC (SWIFT)</label>
+                <input type="text" id="beneficiaire-bic" class="input-field" placeholder="Ex: BNPAFRPPXXX" required>
+                
+                <label for="montant">Montant (EUR)</label>
+                <input type="number" id="montant" class="input-field" step="0.01" min="0.01" required>
+
+                <label for="motif">Motif / Libellé</label>
+                <input type="text" id="motif" class="input-field" placeholder="Ex: Loyer, Cadeau" required>
+
+                <div class="full-width">
+                    <p class="message-info" style="text-align: center;">Solde actuel disponible : <strong id="current-balance">0,00 €</strong></p>
+                </div>
+
+                <div class="full-width" style="text-align: center;">
+                    <button type="submit" class="btn btn-primary" id="transfer-button">Valider le Virement</button>
+                </div>
+            </form>
+            
+            <p id="message-virement" class="full-width" style="margin-top: 15px; text-align: center;"></p>
+        </div>
+    </main>
+
+    <aside class="right-panel">
+        <a href="dashboard.html"><button>Synthèse des comptes</button></a>
+        <a href="historique.html"><button>Historique des opérations</button></a>
+        <a href="rib.html"><button>Imprimer un RIB</button></a>
+        <button>Souscrire en ligne</button>
+        <button class="sav">VOTRE ESPACE SAV</button>
+    </aside>
+
+    <footer>
+        <p>© BNP Paribas - Tous droits réservés</p>
+    </footer>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const currentUser = checkAuth(); 
+            if (!currentUser) return; 
+
+            // Éléments d'affichage
+            document.getElementById('advisor-name').textContent = currentUser.advisor;
+            const soldeElement = document.getElementById('client-solde');
+            const currentBalanceElement = document.getElementById('current-balance');
+            const compteSourceInput = document.getElementById('compte-source');
+            const messageVirement = document.getElementById('message-virement');
+            const virementForm = document.getElementById('virement-form');
+            const blockedAlert = document.getElementById('virement-alert-blocked');
+
+            const updateSoldeDisplay = () => {
+                soldeElement.textContent = formatCurrency(currentUser.solde);
+                currentBalanceElement.textContent = formatCurrency(currentUser.solde);
+                // Le compte source est le RIB de l'utilisateur
+                compteSourceInput.value = currentUser.rib || currentUser.clientCode; 
+            };
+
+            updateSoldeDisplay();
+            
+            // Gestion du compte bloqué
+            if (currentUser.isLocked) {
+                blockedAlert.style.display = 'block';
+                document.getElementById('transfer-button').disabled = true;
+                return;
+            }
+
+            // Gestion de la soumission du formulaire
+            virementForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+
+                const montant = parseFloat(document.getElementById('montant').value);
+                const nomBeneficiaire = document.getElementById('beneficiaire-nom').value;
+                const ibanBeneficiaire = document.getElementById('beneficiaire-iban').value;
+                const bicBeneficiaire = document.getElementById('beneficiaire-bic').value;
+                const banqueBeneficiaire = document.getElementById('beneficiaire-banque').value;
+                const motif = document.getElementById('motif').value;
+
+                if (isNaN(montant) || montant <= 0) {
+                    messageVirement.className = 'message-error';
+                    messageVirement.textContent = 'Veuillez entrer un montant valide supérieur à zéro.';
+                    return;
+                }
+
+                if (montant > currentUser.solde) {
+                    messageVirement.className = 'message-error';
+                    messageVirement.textContent = 'Solde insuffisant pour effectuer ce virement.';
+                    return;
+                }
+                
+                // --- Logique de Virement ---
+
+                // 1. Débiter le solde
+                currentUser.solde -= montant;
+
+                // 2. Ajouter la transaction à l'historique
+                const transaction = {
+                    date: new Date().toISOString(),
+                    type: "Virement SEPA/SWIFT",
+                    description: `Virement vers ${nomBeneficiaire} (${banqueBeneficiaire}, IBAN: ${ibanBeneficiaire}). Motif: ${motif}`,
+                    amount: -montant 
+                };
+                currentUser.history.push(transaction);
+                currentUser.history.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                // 3. Sauvegarder et mettre à jour l'affichage
+                updateUser(currentUser);
+                updateSoldeDisplay();
+
+                messageVirement.className = 'message-success';
+                messageVirement.textContent = `Virement de ${formatCurrency(montant)} effectué avec succès vers ${nomBeneficiaire}. Nouveau solde : ${formatCurrency(currentUser.solde)}.`;
+
+                // Réinitialiser les champs spécifiques du formulaire
+                document.getElementById('beneficiaire-nom').value = '';
+                document.getElementById('beneficiaire-banque').value = '';
+                document.getElementById('beneficiaire-iban').value = '';
+                document.getElementById('beneficiaire-bic').value = '';
+                document.getElementById('montant').value = '';
+                document.getElementById('motif').value = '';
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gérer les Bénéficiaires</title>
+    <link rel="stylesheet" href="styles.css"> 
+</head>
+<body class="app-bg">
+
+    <aside class="sidebar">
+        <div class="logo-box">
+            <img src=image height=60 width=100>
+            <div><div class="bank-name">Société Générale</div><div class="bank-sub">Espace Client</div></div>
+        </div>
+        <nav class="nav">
+            <a href="dashboard.html" class="nav-item">Dashboard</a>
+            <a href="profil.html" class="nav-item">Mon Profil</a>
+            <a href="rib.html" class="nav-item">RIB</a>
+            <a href="historique.html" class="nav-item">Historique</a>
+            <a href="virement.html" class="nav-item active">Virements</a>
+            <a href="mes-cartes.html" class="nav-item">Mes Cartes</a>
+            <a href="index.html" id="logoutLink" class="nav-item logout">Déconnexion</a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header class="topbar">
+            <h2 class="page-title">Ajouter un Bénéficiaire</h2>
+            <div class="right-info" id="sessionInfo"></div>
+        </header>
+
+        <section class="content">
+            <div class="box">
+                <h2>Nouveau Bénéficiaire</h2>
+                <form id="beneficiary-form" class="form-grid">
+                    <label for="benef-name">Nom du Bénéficiaire</label>
+                    <input type="text" id="benef-name" class="input-field" required>
+
+                    <label for="benef-rib">RIB (IBAN)</label>
+                    <input type="text" id="benef-rib" class="input-field" required>
+
+                    <label for="benef-bic">BIC (SWIFT)</label>
+                    <input type="text" id="benef-bic" class="input-field" required>
+
+                    <button type="submit" class="btn btn-primary full-width">Ajouter le Bénéficiaire</button>
+                    <p id="benef-message" class="message-error" hidden></p>
+                </form>
+            </div>
+            
+            <div class="box">
+                <h2>Liste des Bénéficiaires Actuels</h2>
+                <ul id="beneficiary-list" class="list">
+                    </ul>
+            </div>
+        </section>
+    </main>
+
+    <script src="shared.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const currentUser = checkAuth(); 
+            if (!currentUser) return;
+
+            const form = document.getElementById('beneficiary-form');
+            const list = document.getElementById('beneficiary-list');
+            const messageElement = document.getElementById('benef-message');
+
+            function renderBeneficiaries() {
+                list.innerHTML = '';
+                const beneficiaries = getBeneficiaries(currentUser.clientCode);
+                if (beneficiaries.length === 0) {
+                    list.innerHTML = '<li>Aucun bénéficiaire enregistré.</li>';
+                    return;
+                }
+                beneficiaries.forEach(b => {
+                    const li = document.createElement('li');
+                    li.textContent = `${b.name} | IBAN: ${b.rib} (BIC: ${b.bic})`;
+                    list.appendChild(li);
+                });
+            }
+
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                messageElement.hidden = true;
+
+                const newBeneficiary = {
+                    name: document.getElementById('benef-name').value,
+                    rib: document.getElementById('benef-rib').value,
+                    bic: document.getElementById('benef-bic').value
+                };
+
+                if (addBeneficiary(currentUser.clientCode, newBeneficiary)) {
+                    form.reset();
+                    renderBeneficiaries();
+                    alert("Bénéficiaire ajouté avec succès !");
+                } else {
+                    messageElement.textContent = "Erreur : Un bénéficiaire avec cet IBAN existe déjà.";
+                    messageElement.hidden = false;
+                }
+            });
+
+            renderBeneficiaries();
+        });
+    </script>
+</body>
+</html>

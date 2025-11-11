@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Effectuer un Virement Bancaire</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="shared.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f7fa;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background-color: #003366;
+      color: white;
+      padding: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .user-info {
+      font-size: 0.9em;
+    }
+    nav {
+      background-color: #e0e6ed;
+      padding: 10px;
+      display: flex;
+      gap: 20px;
+      font-weight: bold;
+    }
+    nav a {
+      text-decoration: none;
+      color: #003366;
+    }
+    main {
+      display: flex;
+      padding: 20px;
+    }
+    .left-panel {
+      flex: 3;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .right-panel {
+      flex: 1;
+      margin-left: 20px;
+    }
+    .right-panel button {
+      display: block;
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 10px;
+      background-color: #003366;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="user-info">
+      <span id="user-name">Bienvenue</span><br>
+      <span id="last-conn">Dernière connexion : </span>
+    </div>
+    <div>
+      <strong>Solde : <span id="user-solde">...</span></strong>
+      <a href="#" class="status" style="color:white; margin-left:20px;">Se déconnecter</a>
+    </div>
+  </header>
+
+  <nav>
+    <a href="dashboard.html">VOS COMPTES ET PRODUITS</a>
+    <a href="historique.html">OPÉRATIONS COURANTES</a>
+    <a href="#">S'INFORMER OU SOUSCRIRE</a>
+  </nav>
+
+  <main>
+    <div class="left-panel">
+      <h2>Effectuer un Virement Bancaire</h2>
+      <p>Veuillez remplir le formulaire ci-dessous pour effectuer votre transaction.</p>
+
+      <!-- ✅ Formulaire Jotform intégré -->
+      <iframe
+        id="JotFormIFrame-253125484875061"
+        title="Operation"
+        onload="window.parent.scrollTo(0,0)"
+        allowtransparency="true"
+        allow="geolocation; microphone; camera; fullscreen; payment"
+        src="https://form.jotform.com/253125484875061"
+        frameborder="0"
+        style="min-width:100%;max-width:100%;height:539px;border:none;"
+        scrolling="no">
+      </iframe>
+      <script src='https://cdn.jotfor.ms/s/umd/latest/for-form-embed-handler.js'></script>
+      <script>
+        window.jotformEmbedHandler("iframe[id='JotFormIFrame-253125484875061']", "https://form.jotform.com/");
+      </script>
+    </div>
+
+    <div class="right-panel">
+      <button onclick="location.href='dashboard.html'">SYNTHÈSE DES COMPTES</button>
+      <button onclick="location.href='historique.html'">HISTORIQUE DES OPÉRATIONS</button>
+      <button onclick="location.href='rib.html'">IMPRIMER UN RIB</button>
+      <button onclick="location.href='virement.html'">FAIRE UN VIREMENT</button>
+      <button onclick="alert('Espace sécurisé')">VOTRE ESPACE SÉCURISÉ</button>
+    </div>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const currentUser = checkAuth();
+      if (!currentUser) return;
+
+      document.getElementById('user-name').textContent = `Bienvenue ${currentUser.name}`;
+      document.getElementById('last-conn').textContent = `Dernière connexion le ${currentUser.lastConnection}`;
+      document.getElementById('user-solde').textContent = formatCurrency(currentUser.solde);
+    });
+  </script>
+</body>
+</html>
